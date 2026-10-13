@@ -105,8 +105,10 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     const map = mapInstanceRef.current;
     if (!map || incidents.length === 0) return;
 
-    const points: L.LatLngExpression[] = incidents
-      .filter((i) => i.latitude && i.longitude)
+    const points: L.LatLngTuple[] = incidents
+      .filter((i): i is typeof i & { latitude: number; longitude: number } =>
+        typeof i.latitude === 'number' && typeof i.longitude === 'number'
+      )
       .map((i) => [i.latitude, i.longitude]);
 
     if (points.length === 0) return;
@@ -220,7 +222,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
   return (
     // 🔧 Fixed height instead of h-full min-h-105 — stops the giant empty block
-    <div className="relative w-full h-[460px] rounded-xl overflow-hidden border border-slate-800 shadow-md">
+    <div className="relative w-full h-115 rounded-xl overflow-hidden border border-slate-800 shadow-md">
       <div ref={mapContainerRef} className="absolute inset-0 z-10" />
 
       {/* Top Left Status Badge */}
