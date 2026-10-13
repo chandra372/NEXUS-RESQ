@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: nexus-resq
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false

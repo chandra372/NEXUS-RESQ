@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  nexus-resq:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nexus-resq:latest
+    container_name: nexus-resq-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATASET_PATH=/app/nexus-resq/large_emergency_dataset
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
