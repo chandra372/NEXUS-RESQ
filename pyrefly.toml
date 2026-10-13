@@ -1,0 +1,8 @@
+# pyrefly.toml — at C:\Users\c8964\OneDrive\Documents\New project\proj\
+python-interpreter = ".venv\\Scripts\\python.exe"
+python-version = "3.10"
+search-path = [
+  ".venv\\Lib\\site-packages",
+  "nexus-resq\\backend",
+]
+ignore = ["**/tests/**", "**/test_*.py"]

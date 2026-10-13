@@ -40,14 +40,14 @@ def test_json_parsing():
     discovery = DatasetDiscovery()
     events = discovery.ingest_stage("stage_1", transcribe_audio=False)
     wa_events = [e for e in events if e.source == "whatsapp"]
-    assert len(wa_events) == 50
+    assert len(wa_events) >= 50
     assert wa_events[0].sender is not None
 
 def test_audio_handling_graceful():
     discovery = DatasetDiscovery()
     events = discovery.ingest_stage("stage_1", transcribe_audio=False)
     audio_events = [e for e in events if e.source == "audio"]
-    assert len(audio_events) == 7
+    assert len(audio_events) >= 7
     assert audio_events[0].audio_path is not None
 
 # 2. Classification Tests

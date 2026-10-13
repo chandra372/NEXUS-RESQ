@@ -139,26 +139,34 @@ export const Dashboard: React.FC = () => {
 
   // Filtered incidents
   const filteredIncidents = incidents.filter((inc) => {
-    if (filters.status && inc.status.toUpperCase() !== filters.status.toUpperCase()) {
+  try {
+    if (filters.status && inc.status?.toUpperCase() !== filters.status.toUpperCase()) {
       return false;
     }
-    if (filters.priority && inc.priority_level.toUpperCase() !== filters.priority.toUpperCase()) {
+    if (filters.priority && inc.priority_level?.toUpperCase() !== filters.priority.toUpperCase()) {
       return false;
     }
-    if (filters.stage && inc.last_updated_stage.toLowerCase() !== filters.stage.toLowerCase()) {
+    if (filters.stage && inc.last_updated_stage?.toLowerCase() !== filters.stage.toLowerCase()) {
       return false;
     }
     if (filters.search) {
       const q = filters.search.toLowerCase();
       const match =
-        inc.name.toLowerCase().includes(q) ||
-        inc.canonical_location.toLowerCase().includes(q) ||
-        inc.incident_id.toLowerCase().includes(q) ||
-        inc.landmarks.some((l) => l.toLowerCase().includes(q));
+        inc.name?.toLowerCase().includes(q) ||
+        inc.canonical_location?.toLowerCase().includes(q) ||
+        inc.incident_id?.toLowerCase().includes(q) ||
+        (inc.landmarks ?? []).some((l) => l.toLowerCase().includes(q));
       if (!match) return false;
     }
     return true;
-  });
+  } catch (err) {
+    console.error('[Filter] Dropping incident due to error:', err, inc);
+    return false;
+  }
+});
+
+// 🔎 DEBUG: log once per render
+console.log('[Dashboard] incidents:', incidents.length, 'filtered:', filteredIncidents.length, 'filters:', filters);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">

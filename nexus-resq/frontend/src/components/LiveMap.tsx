@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Layers, Navigation, ExternalLink } from 'lucide-react';
 import { IncidentSummary } from '../types';
 
 interface LiveMapProps {
@@ -12,19 +11,12 @@ interface LiveMapProps {
 const GOOGLE_MAPS_KEY =
   import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBOjAJwIB_Djq0aILqxl_oMLGrcELKOFwA';
 
-type MapLayerType = 'tactical' | 'google-hybrid' | 'google-roadmap' | 'google-terrain';
+type MapLayerType = 'google-hybrid' | 'google-roadmap' | 'google-terrain';
 
 const TILE_LAYERS: Record<
   MapLayerType,
   { label: string; icon: string; url: string; attribution: string; subdomains?: string[] }
 > = {
-  tactical: {
-    label: 'Tactical Dark',
-    icon: '🌙',
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; CARTO',
-    subdomains: ['a', 'b', 'c', 'd'],
-  },
   'google-hybrid': {
     label: 'Google Satellite',
     icon: '🛰️',
@@ -54,22 +46,22 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker | L.Circle }>({});
-  const [activeLayer, setActiveLayer] = useState<MapLayerType>('tactical');
+  const [activeLayer, setActiveLayer] = useState<MapLayerType>('google-hybrid');
 
   // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Center on Chennai emergency area (Velachery / Tambaram / Medavakkam)
+    // 🔧 Zoom 13 = neighborhood level (was 12 = whole city)
     const map = L.map(mapContainerRef.current, {
       center: [12.955, 80.185],
-      zoom: 12,
+      zoom: 13,
       zoomControl: false,
     });
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    const initialConfig = TILE_LAYERS['tactical'];
+    const initialConfig = TILE_LAYERS['google-hybrid'];
     const tileLayer = L.tileLayer(initialConfig.url, {
       attribution: initialConfig.attribution,
       maxZoom: 20,
@@ -78,6 +70,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
     currentTileLayerRef.current = tileLayer;
     mapInstanceRef.current = map;
+
+    // 🔧 Make sure Leaflet recalculates size after layout settles
+    setTimeout(() => map.invalidateSize(), 100);
 
     return () => {
       map.remove();
@@ -105,12 +100,30 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     currentTileLayerRef.current = newTileLayer;
   }, [activeLayer]);
 
+  // 🔧 Auto-fit map to visible incidents (only when incidents change)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || incidents.length === 0) return;
+
+    const points: L.LatLngExpression[] = incidents
+      .filter((i) => i.latitude && i.longitude)
+      .map((i) => [i.latitude, i.longitude]);
+
+    if (points.length === 0) return;
+
+    if (points.length === 1) {
+      map.setView(points[0], 14);
+    } else {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+    }
+  }, [incidents]);
+
   // Update incident markers
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clear old markers
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
 
@@ -121,14 +134,13 @@ export const LiveMap: React.FC<LiveMapProps> = ({
         const isSelected = selectedIncident?.incident_id === inc.incident_id;
 
         const color = isResolved
-          ? '#10b981' // emerald
+          ? '#10b981'
           : isCritical
-          ? '#ef4444' // red
+          ? '#ef4444'
           : inc.priority_level === 'HIGH'
-          ? '#f97316' // orange
-          : '#eab308'; // yellow
+          ? '#f97316'
+          : '#eab308';
 
-        // Custom HTML marker
         const iconHtml = `
           <div class="relative flex items-center justify-center">
             ${isCritical ? '<div class="absolute w-10 h-10 rounded-full bg-red-500/30 pulsing-ring pointer-events-none"></div>' : ''}
@@ -191,7 +203,6 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
         markersRef.current[inc.incident_id] = marker;
 
-        // Approximate radius circle where location precision is area
         if (inc.location_precision === 'area') {
           const circle = L.circle([inc.latitude, inc.longitude], {
             radius: 800,
@@ -208,8 +219,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   }, [incidents, selectedIncident, onSelectIncident]);
 
   return (
-    <div className="relative w-full h-full min-h-105 rounded-xl overflow-hidden border border-slate-800 shadow-md">
-      <div ref={mapContainerRef} className="w-full h-full min-h-105 bg-slate-950 z-10" />
+    // 🔧 Fixed height instead of h-full min-h-105 — stops the giant empty block
+    <div className="relative w-full h-[460px] rounded-xl overflow-hidden border border-slate-800 shadow-md">
+      <div ref={mapContainerRef} className="absolute inset-0 z-10" />
 
       {/* Top Left Status Badge */}
       <div className="absolute top-3 left-3 z-20 bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-800 text-[11px] text-slate-300 shadow flex items-center gap-2">
@@ -219,7 +231,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
         <span className="text-slate-400">Chennai Operations</span>
       </div>
 
-      {/* Top Right Google Maps Layer Switcher */}
+      {/* Top Right Layer Switcher */}
       <div className="absolute top-3 right-3 z-20 bg-slate-900/90 backdrop-blur-md p-1 rounded-lg border border-slate-800 shadow flex items-center gap-1">
         {(Object.keys(TILE_LAYERS) as MapLayerType[]).map((key) => {
           const layer = TILE_LAYERS[key];
