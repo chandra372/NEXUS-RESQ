@@ -1,0 +1,11 @@
+{
+  "name": "nexus-resq-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix nexus-resq/frontend run dev",
+    "dev:frontend": "npm --prefix nexus-resq/frontend run dev",
+    "dev:backend": "python -m uvicorn app.main:app --app-dir nexus-resq/backend --host 127.0.0.1 --port 8000 --reload",
+    "build": "npm --prefix nexus-resq/frontend run build"
+  }
+}
