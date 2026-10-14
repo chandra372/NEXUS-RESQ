@@ -1,13 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "installCommand": "npm --prefix nexus-resq/frontend install",
+  "buildCommand": "npm --prefix nexus-resq/frontend run build",
   "outputDirectory": "nexus-resq/frontend/dist",
   "framework": "vite",
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
