@@ -18,6 +18,25 @@ def test_api_health_endpoint():
     assert data["status"] == "healthy"
     assert data["service"] == "NEXUS RESQ"
 
+def test_audio_transcription_removes_temp_file_when_provider_fails(monkeypatch):
+    temp_paths = []
+
+    class FailingProvider:
+        def transcribe(self, audio_path):
+            temp_paths.append(audio_path)
+            raise RuntimeError("Transcription failed")
+
+    monkeypatch.setattr("app.api.routes.get_speech_provider", FailingProvider)
+
+    with pytest.raises(RuntimeError, match="Transcription failed"):
+        client.post(
+            "/api/audio/transcribe",
+            files={"file": ("call.mp3", b"audio data", "audio/mpeg")}
+        )
+
+    assert len(temp_paths) == 1
+    assert not os.path.exists(temp_paths[0])
+
 def test_api_stages_and_stats():
     response = client.get("/api/stages")
     assert response.status_code == 200

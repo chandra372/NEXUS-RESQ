@@ -170,14 +170,13 @@ async def transcribe_audio_file(file: UploadFile = File(...)):
         tmp.write(content)
         tmp_path = tmp.name
 
-    provider = get_speech_provider()
-    res = provider.transcribe(tmp_path)
     try:
+        provider = get_speech_provider()
+        res = provider.transcribe(tmp_path)
+        return res.to_dict()
+    finally:
         os.remove(tmp_path)
-    except Exception:
-        pass
 
-    return res.to_dict()
 
 @router.get("/evaluation")
 def run_evaluation_benchmark():
